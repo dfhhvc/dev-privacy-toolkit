@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "100%离线运行的开发者隐私工具箱。JSON格式化、Base64编解码、URL编码解码、JWT解码、正则测试。零数据上传，保护您的代码安全。",
   keywords: ["developer tools", "privacy", "offline", "JSON", "Base64", "URL", "JWT", "regex", "开发者工具"],
   authors: [{ name: "DevPrivacy" }],
-  manifest: "/manifest.json",
+  manifest: "/dev-privacy-toolkit/manifest.json",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",

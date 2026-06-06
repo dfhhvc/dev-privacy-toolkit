@@ -3,9 +3,9 @@
 <p align="center">
   <img src="https://img.shields.io/badge/100%25-Offline-success?style=flat-square" alt="100% Offline">
   <img src="https://img.shields.io/badge/PWA-Supported-blue?style=flat-square" alt="PWA">
-  <img src="https://img.shields.io/badge/Next.js-16.2.7-black?style=flat-square&logo=next.js" alt="Next.js">
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Tailwind-4.0-38bdf8?style=flat-square&logo=tailwindcss" alt="Tailwind">
+  <img src="https://img.shields.io/github/stars/dfhhvc/dev-privacy-toolkit?style=flat-square" alt="Stars">
+  <img src="https://img.shields.io/github/license/dfhhvc/dev-privacy-toolkit?style=flat-square" alt="License">
+  <img src="https://img.shields.io/github/last-commit/dfhhvc/dev-privacy-toolkit?style=flat-square" alt="Last Commit">
 </p>
 
 <p align="center">
@@ -13,6 +13,8 @@
 </p>
 
 [English](#english) | [中文](#中文)
+
+> **为什么又造一个轮子？** 因为现有的在线工具（如 CyberChef、JSON Formatter）虽然功能强大，但都需要联网使用。DevPrivacy Toolkit 的核心差异化是 **100% 离线运行** —— 您的 JWT 令牌、生产环境 JSON、敏感配置永远不会离开您的电脑。
 
 ---
 
@@ -64,6 +66,15 @@ npm install
 # 启动开发服务器
 npm run dev
 
+# 代码检查
+npm run lint
+
+# 类型检查
+npm run type-check
+
+# 格式化代码
+npm run format
+
 # 构建静态站点
 npm run build
 ```
@@ -72,10 +83,14 @@ npm run build
 
 本项目使用 Next.js 静态导出，可部署到任何静态托管服务：
 
-- **GitHub Pages** — 直接推送 `dist` 目录
+- **GitHub Pages** — 自动部署（已配置）
 - **Vercel** — 自动部署
 - **Netlify** — 拖拽部署
 - **Cloudflare Pages** — 自动构建
+
+### 贡献
+
+欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
 
 ### 技术栈
 
