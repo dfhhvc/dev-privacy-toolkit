@@ -116,8 +116,9 @@ export default function Home() {
   // Register service worker for PWA
   useEffect(() => {
     if ("serviceWorker" in navigator) {
+      const swPath = "/dev-privacy-toolkit/sw.js"
       navigator.serviceWorker
-        .register("/sw.js")
+        .register(swPath)
         .then(() => console.log("SW registered"))
         .catch((err) => console.log("SW registration failed:", err))
     }

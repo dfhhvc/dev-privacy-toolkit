@@ -2,58 +2,58 @@
   "name": "DevPrivacy Toolkit - 离线开发者工具箱",
   "short_name": "DevPrivacy",
   "description": "100%离线运行的开发者隐私工具箱，保护您的代码安全",
-  "start_url": "/",
+  "start_url": "/dev-privacy-toolkit/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/dev-privacy-toolkit/",
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "/icon-72x72.png",
+      "src": "/dev-privacy-toolkit/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-96x96.png",
+      "src": "/dev-privacy-toolkit/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-128x128.png",
+      "src": "/dev-privacy-toolkit/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-144x144.png",
+      "src": "/dev-privacy-toolkit/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-152x152.png",
+      "src": "/dev-privacy-toolkit/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-192x192.png",
+      "src": "/dev-privacy-toolkit/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-384x384.png",
+      "src": "/dev-privacy-toolkit/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/dev-privacy-toolkit/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -62,14 +62,14 @@
   "categories": ["developer", "productivity", "utilities"],
   "screenshots": [
     {
-      "src": "/screenshot-1.png",
+      "src": "/dev-privacy-toolkit/screenshot-1.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "JSON工具界面"
     },
     {
-      "src": "/screenshot-2.png",
+      "src": "/dev-privacy-toolkit/screenshot-2.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
@@ -81,15 +81,15 @@
       "name": "JSON工具",
       "short_name": "JSON",
       "description": "快速打开JSON格式化工具",
-      "url": "/?tool=json",
-      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+      "url": "/dev-privacy-toolkit/?tool=json",
+      "icons": [{ "src": "/dev-privacy-toolkit/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Base64工具",
       "short_name": "Base64",
       "description": "快速打开Base64编解码工具",
-      "url": "/?tool=base64",
-      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+      "url": "/dev-privacy-toolkit/?tool=base64",
+      "icons": [{ "src": "/dev-privacy-toolkit/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

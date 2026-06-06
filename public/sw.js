@@ -1,15 +1,16 @@
 /**
  * Service Worker for DevPrivacy Toolkit
  * Provides offline support and caching
- * @version 1.0.0
+ * @version 1.1.0
  */
 
-const CACHE_NAME = "devprivacy-v1";
+const CACHE_NAME = "devprivacy-v2";
+const BASE_PATH = "/dev-privacy-toolkit";
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/favicon.ico",
+  BASE_PATH + "/",
+  BASE_PATH + "/index.html",
+  BASE_PATH + "/manifest.json",
+  BASE_PATH + "/favicon.ico",
 ];
 
 // Install: Cache static assets
@@ -49,13 +50,16 @@ self.addEventListener("fetch", (event) => {
   // Skip cross-origin requests
   if (url.origin !== self.location.origin) return;
 
+  // Only handle requests within basePath
+  if (!url.pathname.startsWith(BASE_PATH)) return;
+
   // Cache-first for static assets
   if (
     request.destination === "style" ||
     request.destination === "script" ||
     request.destination === "image" ||
     request.destination === "font" ||
-    url.pathname === "/"
+    url.pathname === BASE_PATH + "/"
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -67,7 +71,10 @@ self.addEventListener("fetch", (event) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
             return response;
           })
-          .catch(() => cached);
+          .catch(() => {
+            // If fetch fails and we have cached, return cached
+            return cached;
+          });
       })
     );
     return;
