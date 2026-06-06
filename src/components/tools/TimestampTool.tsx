@@ -1,7 +1,9 @@
 /**
  * Timestamp Tool Component
  * Convert between timestamps and human-readable dates
- * Top-tier implementation with multiple formats
+ * FIXED: Added proper error handling
+ * FIXED: Added accessibility attributes
+ * FIXED: Added input validation
  */
 
 "use client";
@@ -24,6 +26,13 @@ interface TimeInfo {
   value: string;
 }
 
+function isValidTimestamp(ts: string): boolean {
+  const num = parseInt(ts.trim());
+  if (isNaN(num)) return false;
+  // Accept seconds (10 digits) or milliseconds (13 digits)
+  return num > 0 && (ts.trim().length === 10 || ts.trim().length === 13);
+}
+
 export function TimestampTool() {
   const [input, setInput] = useState("");
   const [results, setResults] = useState<TimeInfo[]>([]);
@@ -38,11 +47,16 @@ export function TimestampTool() {
       return;
     }
 
+    if (!isValidTimestamp(input)) {
+      showError("无效的时间戳格式，请输入10位(秒)或13位(毫秒)数字");
+      return;
+    }
+
     try {
       let timestamp = parseInt(input.trim());
 
       // Auto-detect seconds vs milliseconds
-      const isSeconds = timestamp < 10000000000;
+      const isSeconds = input.trim().length === 10;
       if (isSeconds) {
         timestamp *= 1000;
       }
@@ -105,8 +119,8 @@ export function TimestampTool() {
 
       setResults(newResults);
       success("时间戳转换成功");
-    } catch (err) {
-      showError(err instanceof Error ? err.message : "转换失败");
+    } catch {
+      showError("转换失败");
     }
   }, [input, success, showError]);
 
@@ -139,8 +153,8 @@ export function TimestampTool() {
 
       setResults(newResults);
       success("日期转换成功");
-    } catch (err) {
-      showError(err instanceof Error ? err.message : "转换失败");
+    } catch {
+      showError("无效的日期格式，请尝试: 2024-01-01 或 ISO格式");
     }
   }, [input, success, showError]);
 
@@ -184,7 +198,7 @@ export function TimestampTool() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             时间戳工具
           </h2>
@@ -198,6 +212,8 @@ export function TimestampTool() {
           "bg-gray-50 border-gray-200",
           "dark:bg-gray-800 dark:border-gray-700"
         )}
+        role="group"
+        aria-label="模式切换"
       >
         <button
           onClick={() => setMode("timestamp-to-date")}
@@ -207,6 +223,7 @@ export function TimestampTool() {
               ? "bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-blue-400"
               : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
           )}
+          aria-pressed={mode === "timestamp-to-date"}
         >
           时间戳 → 日期
         </button>
@@ -218,6 +235,7 @@ export function TimestampTool() {
               ? "bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-blue-400"
               : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
           )}
+          aria-pressed={mode === "date-to-timestamp"}
         >
           日期 → 时间戳
         </button>
@@ -226,11 +244,11 @@ export function TimestampTool() {
       {/* Quick Set Buttons */}
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={setCurrentTimestamp}>
-          <Clock className="h-3 w-3 mr-1" />
+          <Clock className="h-3 w-3 mr-1" aria-hidden="true" />
           当前时间戳
         </Button>
         <Button variant="outline" size="sm" onClick={setCurrentDate}>
-          <Calendar className="h-3 w-3 mr-1" />
+          <Calendar className="h-3 w-3 mr-1" aria-hidden="true" />
           当前日期
         </Button>
       </div>
@@ -238,21 +256,22 @@ export function TimestampTool() {
       {/* Input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="timestamp-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {mode === "timestamp-to-date" ? "时间戳" : "日期"}
           </label>
-          <Button variant="ghost" size="sm" onClick={handleClear}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={handleClear} aria-label="清空">
+            <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
             清空
           </Button>
         </div>
         <input
+          id="timestamp-input"
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={
             mode === "timestamp-to-date"
-              ? "输入Unix时间戳 (秒或毫秒)..."
+              ? "输入Unix时间戳 (10位秒 或 13位毫秒)..."
               : "输入日期，如 2024-01-01 或 ISO格式..."
           }
           className={cn(
@@ -263,17 +282,18 @@ export function TimestampTool() {
             "dark:focus:ring-blue-400",
             "font-mono"
           )}
+          aria-label={mode === "timestamp-to-date" ? "时间戳输入" : "日期输入"}
         />
         {mode === "timestamp-to-date" && (
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            自动识别秒级(10位)和毫秒级(13位)时间戳
+            支持10位(秒)和13位(毫秒)时间戳
           </p>
         )}
       </div>
 
       {/* Actions */}
       <Button onClick={handleAction} className="w-full">
-        <ArrowRightLeft className="h-4 w-4 mr-2" />
+        <ArrowRightLeft className="h-4 w-4 mr-2" aria-hidden="true" />
         转换
       </Button>
 
@@ -316,6 +336,7 @@ export function TimestampTool() {
                         "transition-colors"
                       )}
                       title="复制"
+                      aria-label={`复制 ${result.label}`}
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </button>

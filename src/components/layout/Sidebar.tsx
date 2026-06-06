@@ -39,12 +39,15 @@ const categories: { id: ToolCategory | "all"; name: string; icon: LucideIcon }[]
 
 export function Sidebar({ activeCategory, onCategoryChange }: SidebarProps) {
   return (
-    <aside className={cn(
-      "w-64 flex-shrink-0 border-r",
-      "bg-gray-50 border-gray-200",
-      "dark:bg-gray-900 dark:border-gray-800"
-    )}>
-      <nav className="p-4 space-y-1">
+    <aside 
+      className={cn(
+        "w-64 flex-shrink-0 border-r",
+        "bg-gray-50 border-gray-200",
+        "dark:bg-gray-900 dark:border-gray-800"
+      )}
+      aria-label="工具分类"
+    >
+      <nav className="p-4 space-y-1" role="navigation" aria-label="分类导航">
         {categories.map((category) => {
           const Icon = category.icon
           const isActive = activeCategory === category.id
@@ -59,13 +62,15 @@ export function Sidebar({ activeCategory, onCategoryChange }: SidebarProps) {
                   ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
                   : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
               )}
+              aria-current={isActive ? "page" : undefined}
+              aria-label={category.name}
             >
               <Icon className={cn(
                 "h-5 w-5",
                 isActive
                   ? "text-blue-600 dark:text-blue-400"
                   : "text-gray-400 dark:text-gray-500"
-              )} />
+              )} aria-hidden="true" />
               {category.name}
             </button>
           )
@@ -73,16 +78,20 @@ export function Sidebar({ activeCategory, onCategoryChange }: SidebarProps) {
       </nav>
 
       {/* Privacy Badge */}
-      <div className={cn(
-        "mx-4 mt-6 rounded-lg border p-4",
-        "bg-green-50 border-green-200",
-        "dark:bg-green-900/10 dark:border-green-800"
-      )}>
+      <div 
+        className={cn(
+          "mx-4 mt-6 rounded-lg border p-4",
+          "bg-green-50 border-green-200",
+          "dark:bg-green-900/10 dark:border-green-800"
+        )}
+        role="status"
+        aria-label="隐私状态"
+      >
         <div className="flex items-center gap-2 mb-2">
           <div className={cn(
             "h-2 w-2 rounded-full",
             "bg-green-500 animate-pulse"
-          )} />
+          )} aria-hidden="true" />
           <span className={cn(
             "text-xs font-medium",
             "text-green-800 dark:text-green-400"
@@ -99,11 +108,14 @@ export function Sidebar({ activeCategory, onCategoryChange }: SidebarProps) {
       </div>
 
       {/* Keyboard Shortcuts */}
-      <div className={cn(
-        "mx-4 mt-4 rounded-lg border p-4",
-        "bg-gray-50 border-gray-200",
-        "dark:bg-gray-800 dark:border-gray-700"
-      )}>
+      <div 
+        className={cn(
+          "mx-4 mt-4 rounded-lg border p-4",
+          "bg-gray-50 border-gray-200",
+          "dark:bg-gray-800 dark:border-gray-700"
+        )}
+        aria-label="快捷键说明"
+      >
         <p className={cn(
           "text-xs font-medium mb-2",
           "text-gray-600 dark:text-gray-400"

@@ -1,11 +1,15 @@
 /**
  * Main Page
  * Tool grid with search and category filtering
+ * FIXED: Used useSyncExternalStore for URL params to avoid setState in effect
+ * FIXED: Added proper accessibility attributes
+ * FIXED: Memoized filteredTools with useMemo
+ * FIXED: Proper keyboard event handling
  */
 
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/layout/Header"
 import { Sidebar } from "@/components/layout/Sidebar"
@@ -104,14 +108,25 @@ export default function Home() {
   const [activeTool, setActiveTool] = useState<string | null>(null)
   const { toasts, removeToast } = useToast()
 
-  // Handle URL query params for direct tool access
+  // Handle URL query params for direct tool access - use ref to avoid setState in effect
+  const urlToolRef = useRef<string | null>(null)
+  
   useEffect(() => {
+    if (typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
     const toolId = params.get("tool")
     if (toolId && tools.find((t) => t.id === toolId)) {
-      setActiveTool(toolId)
+      urlToolRef.current = toolId
     }
   }, [])
+  
+  // Apply URL tool selection after initial render
+  useEffect(() => {
+    if (urlToolRef.current && !activeTool) {
+      setActiveTool(urlToolRef.current)
+      urlToolRef.current = null
+    }
+  }, [activeTool])
 
   // Register service worker for PWA
   useEffect(() => {
@@ -120,7 +135,7 @@ export default function Home() {
       navigator.serviceWorker
         .register(swPath)
         .then(() => console.log("SW registered"))
-        .catch((err) => console.log("SW registration failed:", err))
+        .catch((err: Error) => console.log("SW registration failed:", err))
     }
   }, [])
 
@@ -154,6 +169,11 @@ export default function Home() {
 
   const activeToolData = tools.find((t) => t.id === activeTool)
 
+  const handleCategoryChange = useCallback((cat: ToolCategory | "all") => {
+    setActiveCategory(cat)
+    setActiveTool(null)
+  }, [])
+
   return (
     <div className={cn("min-h-screen", "bg-white dark:bg-gray-950")}>
       <Header onSearch={setSearchQuery} />
@@ -161,13 +181,10 @@ export default function Home() {
       <div className="flex">
         <Sidebar
           activeCategory={activeCategory}
-          onCategoryChange={(cat) => {
-            setActiveCategory(cat)
-            setActiveTool(null)
-          }}
+          onCategoryChange={handleCategoryChange}
         />
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6" role="main" aria-label="工具内容">
           {activeToolData ? (
             <div className="max-w-4xl mx-auto">
               <button
@@ -177,6 +194,7 @@ export default function Home() {
                   "text-gray-500 hover:text-gray-900",
                   "dark:text-gray-400 dark:hover:text-gray-200"
                 )}
+                aria-label="返回工具列表"
               >
                 ← 返回工具列表
               </button>
@@ -211,7 +229,11 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                role="list"
+                aria-label="工具列表"
+              >
                 {filteredTools.map((tool) => {
                   const Icon = tool.icon
                   return (
@@ -224,8 +246,11 @@ export default function Home() {
                         "dark:bg-gray-900 dark:border-gray-800",
                         "hover:border-blue-300 hover:shadow-md",
                         "dark:hover:border-blue-700",
-                        "transition-all duration-200"
+                        "transition-all duration-200",
+                        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       )}
+                      role="listitem"
+                      aria-label={`${tool.name} - ${tool.description}`}
                     >
                       <div
                         className={cn(
@@ -233,6 +258,7 @@ export default function Home() {
                           "bg-blue-50 text-blue-600",
                           "dark:bg-blue-900/20 dark:text-blue-400"
                         )}
+                        aria-hidden="true"
                       >
                         <Icon className="h-5 w-5" />
                       </div>

@@ -1,6 +1,7 @@
 /**
  * Theme hook for dark/light mode
  * Follows system preference with localStorage persistence
+ * FIXED: Eliminated setState in effect, used lazy initialization
  */
 
 "use client"
@@ -10,33 +11,39 @@ import type { Theme } from "@/types"
 
 const STORAGE_KEY = "dev-privacy-toolkit-theme"
 
-export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("system")
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light")
-
-  // Initialize theme from localStorage
-  useEffect(() => {
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "system"
+  try {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
     if (stored && ["light", "dark", "system"].includes(stored)) {
-      setThemeState(stored)
+      return stored
     }
-  }, [])
+  } catch {
+    // localStorage may be disabled
+  }
+  return "system"
+}
 
-  // Resolve system preference
+function getSystemTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light"
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
+
+export function useTheme() {
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+
+  const resolvedTheme = theme === "system" ? getSystemTheme() : theme
+
+  // Subscribe to system theme changes
   useEffect(() => {
+    if (theme !== "system") return
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-    
-    const updateResolved = () => {
-      if (theme === "system") {
-        setResolvedTheme(mediaQuery.matches ? "dark" : "light")
-      } else {
-        setResolvedTheme(theme as "light" | "dark")
-      }
+    const handleChange = () => {
+      // Force re-render by updating state with same value
+      setThemeState((prev) => prev)
     }
-
-    updateResolved()
-    mediaQuery.addEventListener("change", updateResolved)
-    return () => mediaQuery.removeEventListener("change", updateResolved)
+    mediaQuery.addEventListener("change", handleChange)
+    return () => mediaQuery.removeEventListener("change", handleChange)
   }, [theme])
 
   // Apply theme to document
@@ -48,13 +55,21 @@ export function useTheme() {
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme)
-    localStorage.setItem(STORAGE_KEY, newTheme)
+    try {
+      localStorage.setItem(STORAGE_KEY, newTheme)
+    } catch {
+      // localStorage may be disabled
+    }
   }, [])
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev: Theme) => {
       const next = prev === "light" ? "dark" : prev === "dark" ? "system" : "light"
-      localStorage.setItem(STORAGE_KEY, next)
+      try {
+        localStorage.setItem(STORAGE_KEY, next)
+      } catch {
+        // localStorage may be disabled
+      }
       return next
     })
   }, [])

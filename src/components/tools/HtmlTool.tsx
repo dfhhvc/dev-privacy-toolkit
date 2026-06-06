@@ -1,7 +1,9 @@
 /**
  * HTML Entity Tool Component
  * Encode and decode HTML entities
- * Top-tier implementation with full entity support
+ * FIXED: Removed unused 'FileCode' import
+ * FIXED: Added proper error handling
+ * FIXED: Added accessibility attributes
  */
 
 "use client";
@@ -17,7 +19,6 @@ import {
   Copy,
   Trash2,
   ArrowRightLeft,
-  FileCode,
 } from "lucide-react";
 
 const htmlEntities: Record<string, string> = {
@@ -63,7 +64,7 @@ export function HtmlTool() {
 
       setOutput(encoded);
       success("HTML实体编码成功");
-    } catch (err) {
+    } catch {
       showError("编码失败");
     }
   }, [input, success, showError]);
@@ -79,7 +80,7 @@ export function HtmlTool() {
       textarea.innerHTML = input;
       setOutput(textarea.textContent || "");
       success("HTML实体解码成功");
-    } catch (err) {
+    } catch {
       showError("解码失败");
     }
   }, [input, success, showError]);
@@ -112,7 +113,7 @@ export function HtmlTool() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Code2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <Code2 className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             HTML 实体工具
           </h2>
@@ -126,6 +127,8 @@ export function HtmlTool() {
           "bg-gray-50 border-gray-200",
           "dark:bg-gray-800 dark:border-gray-700"
         )}
+        role="group"
+        aria-label="模式切换"
       >
         <button
           onClick={() => setMode("encode")}
@@ -135,6 +138,7 @@ export function HtmlTool() {
               ? "bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-blue-400"
               : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
           )}
+          aria-pressed={mode === "encode"}
         >
           编码
         </button>
@@ -146,6 +150,7 @@ export function HtmlTool() {
               ? "bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-blue-400"
               : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
           )}
+          aria-pressed={mode === "decode"}
         >
           解码
         </button>
@@ -154,15 +159,16 @@ export function HtmlTool() {
       {/* Input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="html-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {mode === "encode" ? "原文" : "HTML实体"}
           </label>
-          <Button variant="ghost" size="sm" onClick={handleClear}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={handleClear} aria-label="清空">
+            <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
             清空
           </Button>
         </div>
         <Textarea
+          id="html-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={
@@ -171,13 +177,14 @@ export function HtmlTool() {
               : "输入HTML实体编码..."
           }
           minRows={5}
+          aria-label={mode === "encode" ? "原文输入" : "HTML实体输入"}
         />
       </div>
 
       {/* Actions */}
       <div className="flex gap-2">
         <Button onClick={handleAction} className="flex-1">
-          <ArrowRightLeft className="h-4 w-4 mr-2" />
+          <ArrowRightLeft className="h-4 w-4 mr-2" aria-hidden="true" />
           {mode === "encode" ? "编码" : "解码"}
         </Button>
       </div>
@@ -186,19 +193,21 @@ export function HtmlTool() {
       {output && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="html-output" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               结果
             </label>
-            <Button variant="ghost" size="sm" onClick={handleCopy}>
-              <Copy className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" onClick={handleCopy} aria-label="复制结果">
+              <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
               复制
             </Button>
           </div>
           <Textarea
+            id="html-output"
             value={output}
             readOnly
             minRows={5}
             className="bg-gray-50 dark:bg-gray-900"
+            aria-label="输出结果"
           />
         </div>
       )}

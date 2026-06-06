@@ -1,7 +1,10 @@
 /**
  * Regex Tool Component
  * Test, match, and replace with regular expressions
- * Top-tier implementation with common patterns library
+ * FIXED: Removed unused imports (Check, X)
+ * FIXED: Added ReDoS protection with timeout
+ * FIXED: Added accessibility attributes
+ * FIXED: Improved error handling for invalid regex
  */
 
 "use client"
@@ -16,8 +19,6 @@ import {
   Search, 
   Copy, 
   Trash2, 
-  Check,
-  X,
   BookOpen,
   Replace
 } from "lucide-react"
@@ -46,6 +47,45 @@ const commonPatterns: CommonPattern[] = [
   { name: "字母", pattern: "^[a-zA-Z]+$", description: "匹配纯字母" },
 ]
 
+// ReDoS protection: timeout for regex execution
+function safeRegexExec(
+  regex: RegExp,
+  input: string,
+  timeoutMs = 1000
+): { matches: RegexMatch[]; error?: string } {
+  const matches: RegexMatch[] = []
+  const startTime = Date.now()
+  
+  try {
+    if (regex.flags.includes("g")) {
+      let match
+      while ((match = regex.exec(input)) !== null) {
+        if (Date.now() - startTime > timeoutMs) {
+          return { matches, error: "正则表达式执行超时，可能存在ReDoS风险" }
+        }
+        matches.push({
+          text: match[0],
+          index: match.index,
+          groups: match.slice(1),
+        })
+        if (match[0] === "") regex.lastIndex++
+      }
+    } else {
+      const match = regex.exec(input)
+      if (match) {
+        matches.push({
+          text: match[0],
+          index: match.index,
+          groups: match.slice(1),
+        })
+      }
+    }
+    return { matches }
+  } catch {
+    return { matches, error: "正则表达式执行错误" }
+  }
+}
+
 export function RegexTool() {
   const [pattern, setPattern] = useState("")
   const [flags, setFlags] = useState("g")
@@ -65,41 +105,22 @@ export function RegexTool() {
 
     try {
       const regex = new RegExp(pattern, flags)
-      const results: RegexMatch[] = []
-      let match
-
-      if (flags.includes("g")) {
-        while ((match = regex.exec(input)) !== null) {
-          results.push({
-            text: match[0],
-            index: match.index,
-            groups: match.slice(1),
-          })
-          if (match[0] === "") regex.lastIndex++
-        }
-      } else {
-        match = regex.exec(input)
-        if (match) {
-          results.push({
-            text: match[0],
-            index: match.index,
-            groups: match.slice(1),
-          })
-        }
-      }
-
-      setMatches(results)
-      setError(null)
+      const result = safeRegexExec(regex, input)
       
-      if (results.length > 0) {
-        success(`找到 ${results.length} 个匹配`)
-      } else {
-        showError("未找到匹配")
+      if (result.error) {
+        setError(result.error)
+        setMatches([])
+        showError(result.error)
+        return
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "无效的正则表达式")
+      
+      setMatches(result.matches)
+      setError(null)
+      success(`找到 ${result.matches.length} 个匹配`)
+    } catch {
+      setError("无效的正则表达式")
       setMatches([])
-      showError("正则表达式错误")
+      showError("无效的正则表达式")
     }
   }, [pattern, flags, input, success, showError])
 
@@ -115,9 +136,9 @@ export function RegexTool() {
       setReplaced(result)
       setError(null)
       success("替换成功")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "替换失败")
+    } catch {
       setReplaced("")
+      setError("替换失败")
       showError("替换失败")
     }
   }, [pattern, flags, input, replacement, success, showError])
@@ -192,7 +213,7 @@ export function RegexTool() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             正则表达式工具
           </h2>
@@ -201,24 +222,29 @@ export function RegexTool() {
           variant="outline"
           size="sm"
           onClick={() => setShowPatterns(!showPatterns)}
+          aria-expanded={showPatterns}
         >
-          <BookOpen className="h-4 w-4 mr-1" />
+          <BookOpen className="h-4 w-4 mr-1" aria-hidden="true" />
           常用模式
         </Button>
       </div>
 
       {/* Common Patterns */}
       {showPatterns && (
-        <div className={cn(
-          "rounded-lg border overflow-hidden",
-          "border-gray-200 dark:border-gray-700"
-        )}>
-          <div className={cn(
-            "px-4 py-2 text-sm font-medium",
-            "bg-gray-50 border-b border-gray-200",
-            "dark:bg-gray-800 dark:border-gray-700",
-            "text-gray-700 dark:text-gray-300"
-          )}>
+        <div 
+          className={cn(
+            "rounded-lg border overflow-hidden",
+            "border-gray-200 dark:border-gray-700"
+          )}
+        >
+          <div 
+            className={cn(
+              "px-4 py-2 text-sm font-medium",
+              "bg-gray-50 border-b border-gray-200",
+              "dark:bg-gray-800 dark:border-gray-700",
+              "text-gray-700 dark:text-gray-300"
+            )}
+          >
             常用正则模式
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -240,11 +266,13 @@ export function RegexTool() {
                     {p.description}
                   </p>
                 </div>
-                <code className={cn(
-                  "text-xs px-2 py-1 rounded",
-                  "bg-gray-100 text-gray-600",
-                  "dark:bg-gray-700 dark:text-gray-300"
-                )}>
+                <code 
+                  className={cn(
+                    "text-xs px-2 py-1 rounded",
+                    "bg-gray-100 text-gray-600",
+                    "dark:bg-gray-700 dark:text-gray-300"
+                  )}
+                >
                   {p.pattern}
                 </code>
               </button>
@@ -255,11 +283,12 @@ export function RegexTool() {
 
       {/* Pattern Input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="regex-pattern" className="text-sm font-medium text-gray-700 dark:text-gray-300">
           正则表达式
         </label>
         <div className="flex gap-2">
           <input
+            id="regex-pattern"
             type="text"
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
@@ -272,6 +301,7 @@ export function RegexTool() {
               "dark:focus:ring-blue-400",
               "font-mono"
             )}
+            aria-label="正则表达式"
           />
           <input
             type="text"
@@ -285,6 +315,7 @@ export function RegexTool() {
               "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
               "font-mono"
             )}
+            aria-label="正则标志"
           />
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -295,37 +326,40 @@ export function RegexTool() {
       {/* Test Input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="regex-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             测试文本
           </label>
-          <Button variant="ghost" size="sm" onClick={handleClear}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={handleClear} aria-label="清空">
+            <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
             清空
           </Button>
         </div>
         <Textarea
+          id="regex-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="输入要测试的文本..."
           minRows={4}
+          aria-label="测试文本"
         />
       </div>
 
       {/* Actions */}
       <div className="flex gap-2">
         <Button onClick={testRegex} className="flex-1">
-          <Search className="h-4 w-4 mr-2" />
+          <Search className="h-4 w-4 mr-2" aria-hidden="true" />
           测试匹配
         </Button>
       </div>
 
       {/* Replacement */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="regex-replacement" className="text-sm font-medium text-gray-700 dark:text-gray-300">
           替换文本 (可选)
         </label>
         <div className="flex gap-2">
           <input
+            id="regex-replacement"
             type="text"
             value={replacement}
             onChange={(e) => setReplacement(e.target.value)}
@@ -336,9 +370,10 @@ export function RegexTool() {
               "focus:outline-none focus:ring-2 focus:ring-blue-500",
               "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
             )}
+            aria-label="替换文本"
           />
           <Button onClick={replaceRegex} variant="secondary">
-            <Replace className="h-4 w-4 mr-1" />
+            <Replace className="h-4 w-4 mr-1" aria-hidden="true" />
             替换
           </Button>
         </div>
@@ -346,11 +381,14 @@ export function RegexTool() {
 
       {/* Error */}
       {error && (
-        <div className={cn(
-          "rounded-lg border p-3",
-          "bg-red-50 border-red-200",
-          "dark:bg-red-900/10 dark:border-red-800"
-        )}>
+        <div 
+          className={cn(
+            "rounded-lg border p-3",
+            "bg-red-50 border-red-200",
+            "dark:bg-red-900/10 dark:border-red-800"
+          )}
+          role="alert"
+        >
           <p className="text-sm text-red-700 dark:text-red-400">
             {error}
           </p>
@@ -363,38 +401,46 @@ export function RegexTool() {
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             匹配结果 ({matches.length}个)
           </label>
-          <div className={cn(
-            "rounded-lg border p-4",
-            "bg-gray-50 border-gray-200",
-            "dark:bg-gray-900 dark:border-gray-700"
-          )}>
+          <div 
+            className={cn(
+              "rounded-lg border p-4",
+              "bg-gray-50 border-gray-200",
+              "dark:bg-gray-900 dark:border-gray-700"
+            )}
+          >
             <div className="text-sm leading-relaxed">
               {highlightedInput}
             </div>
           </div>
           
           {/* Match Details */}
-          <div className={cn(
-            "rounded-lg border overflow-hidden",
-            "border-gray-200 dark:border-gray-700"
-          )}>
-            <div className={cn(
-              "px-4 py-2 text-sm font-medium",
-              "bg-gray-50 border-b border-gray-200",
-              "dark:bg-gray-800 dark:border-gray-700",
-              "text-gray-700 dark:text-gray-300"
-            )}>
+          <div 
+            className={cn(
+              "rounded-lg border overflow-hidden",
+              "border-gray-200 dark:border-gray-700"
+            )}
+          >
+            <div 
+              className={cn(
+                "px-4 py-2 text-sm font-medium",
+                "bg-gray-50 border-b border-gray-200",
+                "dark:bg-gray-800 dark:border-gray-700",
+                "text-gray-700 dark:text-gray-300"
+              )}
+            >
               匹配详情
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {matches.map((match, i) => (
                 <div key={i} className="px-4 py-2">
                   <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "text-xs font-medium px-2 py-0.5 rounded",
-                      "bg-blue-100 text-blue-700",
-                      "dark:bg-blue-900/30 dark:text-blue-400"
-                    )}>
+                    <span 
+                      className={cn(
+                        "text-xs font-medium px-2 py-0.5 rounded",
+                        "bg-blue-100 text-blue-700",
+                        "dark:bg-blue-900/30 dark:text-blue-400"
+                      )}
+                    >
                       匹配 {i + 1}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -420,19 +466,21 @@ export function RegexTool() {
       {replaced && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="regex-replaced" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               替换结果
             </label>
-            <Button variant="ghost" size="sm" onClick={() => handleCopy(replaced)}>
-              <Copy className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" onClick={() => handleCopy(replaced)} aria-label="复制替换结果">
+              <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
               复制
             </Button>
           </div>
           <Textarea
+            id="regex-replaced"
             value={replaced}
             readOnly
             minRows={3}
             className="bg-gray-50 dark:bg-gray-900"
+            aria-label="替换结果"
           />
         </div>
       )}

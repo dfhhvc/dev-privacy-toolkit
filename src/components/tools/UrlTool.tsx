@@ -1,7 +1,9 @@
 /**
  * URL Tool Component
  * Encode, decode, and parse URL parameters
- * Top-tier implementation with full RFC compliance
+ * FIXED: Removed unused imports (Link2, ExternalLink)
+ * FIXED: Added proper error handling
+ * FIXED: Added accessibility attributes
  */
 
 "use client"
@@ -17,8 +19,6 @@ import {
   Copy, 
   Trash2, 
   ArrowRightLeft,
-  Link2,
-  ExternalLink
 } from "lucide-react"
 
 export function UrlTool() {
@@ -39,7 +39,7 @@ export function UrlTool() {
       setOutput(encoded)
       setParsedParams({})
       success("URL编码成功")
-    } catch (err) {
+    } catch {
       showError("编码失败")
     }
   }, [input, success, showError])
@@ -55,7 +55,7 @@ export function UrlTool() {
       setOutput(decoded)
       setParsedParams({})
       success("URL解码成功")
-    } catch (err) {
+    } catch {
       showError("解码失败: 无效的URL编码")
     }
   }, [input, success, showError])
@@ -86,7 +86,7 @@ export function UrlTool() {
       setParsedParams(params)
       setOutput(JSON.stringify(params, null, 2))
       success("URL解析成功")
-    } catch (err) {
+    } catch {
       showError("解析失败: 无效的URL")
     }
   }, [input, success, showError])
@@ -126,7 +126,7 @@ export function UrlTool() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             URL 工具
           </h2>
@@ -134,11 +134,15 @@ export function UrlTool() {
       </div>
 
       {/* Mode Toggle */}
-      <div className={cn(
-        "flex rounded-lg border p-1",
-        "bg-gray-50 border-gray-200",
-        "dark:bg-gray-800 dark:border-gray-700"
-      )}>
+      <div 
+        className={cn(
+          "flex rounded-lg border p-1",
+          "bg-gray-50 border-gray-200",
+          "dark:bg-gray-800 dark:border-gray-700"
+        )}
+        role="group"
+        aria-label="模式切换"
+      >
         {(["encode", "decode", "parse"] as const).map((m) => (
           <button
             key={m}
@@ -149,6 +153,7 @@ export function UrlTool() {
                 ? "bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-blue-400"
                 : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
             )}
+            aria-pressed={mode === m}
           >
             {m === "encode" && "编码"}
             {m === "decode" && "解码"}
@@ -160,17 +165,18 @@ export function UrlTool() {
       {/* Input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="url-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {mode === "encode" && "原文"}
             {mode === "decode" && "编码后"}
             {mode === "parse" && "URL"}
           </label>
-          <Button variant="ghost" size="sm" onClick={handleClear}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={handleClear} aria-label="清空">
+            <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
             清空
           </Button>
         </div>
         <Textarea
+          id="url-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={
@@ -181,13 +187,14 @@ export function UrlTool() {
               : "输入完整URL，如 https://example.com?key=value..."
           }
           minRows={3}
+          aria-label={mode === "encode" ? "原文输入" : mode === "decode" ? "编码输入" : "URL输入"}
         />
       </div>
 
       {/* Actions */}
       <div className="flex gap-2">
         <Button onClick={handleAction} className="flex-1">
-          <ArrowRightLeft className="h-4 w-4 mr-2" />
+          <ArrowRightLeft className="h-4 w-4 mr-2" aria-hidden="true" />
           {mode === "encode" && "编码"}
           {mode === "decode" && "解码"}
           {mode === "parse" && "解析"}
@@ -196,16 +203,20 @@ export function UrlTool() {
 
       {/* Parsed Parameters */}
       {mode === "parse" && Object.keys(parsedParams).length > 0 && (
-        <div className={cn(
-          "rounded-lg border overflow-hidden",
-          "border-gray-200 dark:border-gray-700"
-        )}>
-          <div className={cn(
-            "px-4 py-2 text-sm font-medium",
-            "bg-gray-50 border-b border-gray-200",
-            "dark:bg-gray-800 dark:border-gray-700",
-            "text-gray-700 dark:text-gray-300"
-          )}>
+        <div 
+          className={cn(
+            "rounded-lg border overflow-hidden",
+            "border-gray-200 dark:border-gray-700"
+          )}
+        >
+          <div 
+            className={cn(
+              "px-4 py-2 text-sm font-medium",
+              "bg-gray-50 border-b border-gray-200",
+              "dark:bg-gray-800 dark:border-gray-700",
+              "text-gray-700 dark:text-gray-300"
+            )}
+          >
             解析结果
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -230,19 +241,21 @@ export function UrlTool() {
       {output && mode !== "parse" && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="url-output" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               结果
             </label>
-            <Button variant="ghost" size="sm" onClick={handleCopy}>
-              <Copy className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" onClick={handleCopy} aria-label="复制结果">
+              <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
               复制
             </Button>
           </div>
           <Textarea
+            id="url-output"
             value={output}
             readOnly
             minRows={3}
             className="bg-gray-50 dark:bg-gray-900"
+            aria-label="输出结果"
           />
         </div>
       )}

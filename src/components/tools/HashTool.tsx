@@ -1,7 +1,9 @@
 /**
  * Hash Tool Component
  * Calculate MD5, SHA-1, SHA-256, SHA-512 hashes
- * Top-tier implementation with file support
+ * FIXED: Removed unused 'err' variable, added accessibility
+ * FIXED: Added proper error handling for crypto.subtle failures
+ * FIXED: Added file size validation
  */
 
 "use client";
@@ -26,6 +28,8 @@ interface HashResult {
   algorithm: HashAlgorithm;
   hash: string;
 }
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
 
 async function calculateHash(
   data: string | ArrayBuffer,
@@ -57,6 +61,7 @@ export function HashTool() {
   ]);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isFileMode, setIsFileMode] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { success, error: showError } = useToast();
 
@@ -66,6 +71,12 @@ export function HashTool() {
       return;
     }
 
+    if (selectedAlgos.length === 0) {
+      showError("请至少选择一种哈希算法");
+      return;
+    }
+
+    setIsCalculating(true);
     try {
       const newResults: HashResult[] = [];
 
@@ -76,8 +87,10 @@ export function HashTool() {
 
       setResults(newResults);
       success(`已计算 ${newResults.length} 个哈希值`);
-    } catch (err) {
-      showError("哈希计算失败");
+    } catch {
+      showError("哈希计算失败: 浏览器不支持该算法");
+    } finally {
+      setIsCalculating(false);
     }
   }, [input, selectedAlgos, isFileMode, success, showError]);
 
@@ -85,6 +98,11 @@ export function HashTool() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+
+      if (file.size > MAX_FILE_SIZE) {
+        showError(`文件过大，最大支持 ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = async (event) => {
@@ -105,6 +123,9 @@ export function HashTool() {
         } catch {
           showError("文件哈希计算失败");
         }
+      };
+      reader.onerror = () => {
+        showError("文件读取失败");
       };
       reader.readAsArrayBuffer(file);
     },
@@ -145,7 +166,7 @@ export function HashTool() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Fingerprint className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <Fingerprint className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             哈希计算工具
           </h2>
@@ -157,7 +178,7 @@ export function HashTool() {
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
           选择算法
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="哈希算法选择">
           {algorithms.map((algo) => (
             <button
               key={algo}
@@ -168,9 +189,10 @@ export function HashTool() {
                   ? "bg-blue-600 text-white dark:bg-blue-500"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               )}
+              aria-pressed={selectedAlgos.includes(algo)}
             >
               {selectedAlgos.includes(algo) && (
-                <Check className="inline h-3 w-3 mr-1" />
+                <Check className="inline h-3 w-3 mr-1" aria-hidden="true" />
               )}
               {algo}
             </button>
@@ -185,30 +207,35 @@ export function HashTool() {
           type="file"
           onChange={handleFileUpload}
           className="hidden"
+          aria-label="上传文件"
         />
         <Button
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
           className="w-full"
         >
-          <FileUp className="h-4 w-4 mr-2" />
+          <FileUp className="h-4 w-4 mr-2" aria-hidden="true" />
           {fileName ? `已选择: ${fileName}` : "上传文件计算哈希"}
         </Button>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          最大支持 {MAX_FILE_SIZE / 1024 / 1024}MB
+        </p>
       </div>
 
       {/* Text Input */}
       {!isFileMode && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="hash-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               文本内容
             </label>
-            <Button variant="ghost" size="sm" onClick={handleClear}>
-              <Trash2 className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" onClick={handleClear} aria-label="清空">
+              <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
               清空
             </Button>
           </div>
           <Textarea
+            id="hash-input"
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -216,13 +243,14 @@ export function HashTool() {
             }}
             placeholder="输入要计算哈希的文本..."
             minRows={4}
+            aria-label="文本输入"
           />
         </div>
       )}
 
       {/* Calculate Button */}
-      <Button onClick={calculateHashes} className="w-full">
-        <Fingerprint className="h-4 w-4 mr-2" />
+      <Button onClick={calculateHashes} className="w-full" isLoading={isCalculating}>
+        <Fingerprint className="h-4 w-4 mr-2" aria-hidden="true" />
         计算哈希
       </Button>
 
@@ -254,8 +282,9 @@ export function HashTool() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleCopy(result.hash)}
+                  aria-label={`复制 ${result.algorithm} 结果`}
                 >
-                  <Copy className="h-3 w-3 mr-1" />
+                  <Copy className="h-3 w-3 mr-1" aria-hidden="true" />
                   复制
                 </Button>
               </div>
@@ -281,8 +310,9 @@ export function HashTool() {
           "bg-blue-50 border-blue-200",
           "dark:bg-blue-900/10 dark:border-blue-800"
         )}
+        role="note"
       >
-        <Fingerprint className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+        <Fingerprint className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" aria-hidden="true" />
         <div className="text-sm text-blue-700 dark:text-blue-400">
           <p className="font-medium">安全提示</p>
           <p className="mt-1">

@@ -1,12 +1,13 @@
 /**
  * JSON Tool Component
  * Format, validate, compress, and escape JSON
- * Top-tier implementation with error handling
+ * FIXED: Moved countKeys before updateStats to fix ESLint error
+ * FIXED: Added proper error handling and accessibility
  */
 
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import { Textarea } from "@/components/ui/Textarea"
@@ -23,50 +24,56 @@ import {
   Braces
 } from "lucide-react"
 
+interface JsonStats {
+  size: number
+  lines: number
+  keys: number
+}
+
+function countKeys(obj: unknown): number {
+  if (typeof obj !== "object" || obj === null) return 0
+  let count = 0
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      count++
+      count += countKeys((obj as Record<string, unknown>)[key])
+    }
+  }
+  return count
+}
+
+function validateJson(json: string): boolean {
+  try {
+    JSON.parse(json)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function updateStats(json: string): JsonStats {
+  try {
+    const parsed = JSON.parse(json)
+    return {
+      size: new Blob([json]).size,
+      lines: json.split("\n").length,
+      keys: countKeys(parsed),
+    }
+  } catch {
+    return { size: 0, lines: 0, keys: 0 }
+  }
+}
+
 export function JsonTool() {
   const [input, setInput] = useState("")
   const [output, setOutput] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<JsonStats>({
     size: 0,
     lines: 0,
     keys: 0,
   })
   const { success, error: showError } = useToast()
-
-  const validateJson = useCallback((json: string): boolean => {
-    try {
-      JSON.parse(json)
-      return true
-    } catch {
-      return false
-    }
-  }, [])
-
-  const countKeys = useCallback((obj: unknown): number => {
-    if (typeof obj !== "object" || obj === null) return 0
-    let count = 0
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        count++
-        count += countKeys((obj as Record<string, unknown>)[key])
-      }
-    }
-    return count
-  }, [])
-
-  const updateStats = useCallback((json: string) => {
-    try {
-      const parsed = JSON.parse(json)
-      setStats({
-        size: new Blob([json]).size,
-        lines: json.split("\n").length,
-        keys: countKeys(parsed),
-      })
-    } catch {
-      setStats({ size: 0, lines: 0, keys: 0 })
-    }
-  }, [countKeys])
 
   const formatJson = useCallback(() => {
     if (!input.trim()) {
@@ -79,14 +86,14 @@ export function JsonTool() {
       const formatted = JSON.stringify(parsed, null, 2)
       setOutput(formatted)
       setError(null)
-      updateStats(formatted)
+      setStats(updateStats(formatted))
       success("JSON格式化成功")
     } catch (err) {
       setError(err instanceof Error ? err.message : "无效的JSON")
       setOutput("")
       showError("JSON格式错误")
     }
-  }, [input, success, showError, updateStats])
+  }, [input, success, showError])
 
   const compressJson = useCallback(() => {
     if (!input.trim()) {
@@ -99,14 +106,14 @@ export function JsonTool() {
       const compressed = JSON.stringify(parsed)
       setOutput(compressed)
       setError(null)
-      updateStats(compressed)
+      setStats(updateStats(compressed))
       success("JSON压缩成功")
     } catch (err) {
       setError(err instanceof Error ? err.message : "无效的JSON")
       setOutput("")
       showError("JSON格式错误")
     }
-  }, [input, success, showError, updateStats])
+  }, [input, success, showError])
 
   const escapeJson = useCallback(() => {
     if (!input.trim()) {
@@ -119,8 +126,8 @@ export function JsonTool() {
       setOutput(escaped)
       setError(null)
       success("JSON转义成功")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "转义失败")
+    } catch {
+      setError("转义失败")
       showError("转义失败")
     }
   }, [input, success, showError])
@@ -159,14 +166,14 @@ export function JsonTool() {
     setStats({ size: 0, lines: 0, keys: 0 })
   }, [])
 
-  const isValid = validateJson(input)
+  const isValid = useMemo(() => validateJson(input), [input])
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileJson className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <FileJson className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             JSON 工具
           </h2>
@@ -174,13 +181,13 @@ export function JsonTool() {
         <div className="flex items-center gap-2">
           {isValid && input && (
             <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-              <Check className="h-3 w-3" />
+              <Check className="h-3 w-3" aria-hidden="true" />
               有效JSON
             </span>
           )}
           {!isValid && input && (
             <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
-              <X className="h-3 w-3" />
+              <X className="h-3 w-3" aria-hidden="true" />
               无效JSON
             </span>
           )}
@@ -190,15 +197,16 @@ export function JsonTool() {
       {/* Input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="json-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             输入
           </label>
-          <Button variant="ghost" size="sm" onClick={handleClear}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={handleClear} aria-label="清空输入">
+            <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
             清空
           </Button>
         </div>
         <Textarea
+          id="json-input"
           value={input}
           onChange={(e) => {
             setInput(e.target.value)
@@ -206,36 +214,40 @@ export function JsonTool() {
           }}
           placeholder="在此粘贴JSON内容..."
           minRows={5}
+          aria-label="JSON输入"
         />
       </div>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
         <Button onClick={formatJson}>
-          <Maximize2 className="h-4 w-4 mr-1" />
+          <Maximize2 className="h-4 w-4 mr-1" aria-hidden="true" />
           格式化
         </Button>
         <Button onClick={compressJson} variant="secondary">
-          <Minimize2 className="h-4 w-4 mr-1" />
+          <Minimize2 className="h-4 w-4 mr-1" aria-hidden="true" />
           压缩
         </Button>
         <Button onClick={escapeJson} variant="secondary">
-          <Braces className="h-4 w-4 mr-1" />
+          <Braces className="h-4 w-4 mr-1" aria-hidden="true" />
           转义
         </Button>
         <Button onClick={unescapeJson} variant="secondary">
-          <Braces className="h-4 w-4 mr-1" />
+          <Braces className="h-4 w-4 mr-1" aria-hidden="true" />
           反转义
         </Button>
       </div>
 
       {/* Error */}
       {error && (
-        <div className={cn(
-          "rounded-lg border p-3",
-          "bg-red-50 border-red-200",
-          "dark:bg-red-900/10 dark:border-red-800"
-        )}>
+        <div 
+          className={cn(
+            "rounded-lg border p-3",
+            "bg-red-50 border-red-200",
+            "dark:bg-red-900/10 dark:border-red-800"
+          )}
+          role="alert"
+        >
           <p className="text-sm text-red-700 dark:text-red-400">
             {error}
           </p>
@@ -246,19 +258,21 @@ export function JsonTool() {
       {output && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="json-output" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               输出
             </label>
-            <Button variant="ghost" size="sm" onClick={handleCopy}>
-              <Copy className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" onClick={handleCopy} aria-label="复制结果">
+              <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
               复制
             </Button>
           </div>
           <Textarea
+            id="json-output"
             value={output}
             readOnly
             minRows={5}
             className="bg-gray-50 dark:bg-gray-900"
+            aria-label="JSON输出"
           />
         </div>
       )}
