@@ -1,4 +1,4 @@
-/"/**
+/**
  * Base64 Tool Component
  * Encode and decode Base64 strings and files
  * Top-tier implementation with file support

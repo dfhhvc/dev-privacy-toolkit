@@ -1,4 +1,4 @@
-/"/**
+/**
  * JSON Tool Component
  * Format, validate, compress, and escape JSON
  * Top-tier implementation with error handling

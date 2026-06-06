@@ -1,4 +1,4 @@
-/"/**
+/**
  * Regex Tool Component
  * Test, match, and replace with regular expressions
  * Top-tier implementation with common patterns library
@@ -150,7 +150,7 @@ export function RegexTool() {
   const highlightedInput = useMemo(() => {
     if (matches.length === 0) return input
 
-    const parts: JSX.Element[] = []
+    const parts: React.ReactElement[] = []
     let lastIndex = 0
 
     matches.forEach((match, i) => {

@@ -1,4 +1,4 @@
-/"/**
+/**
  * JWT Tool Component
  * Decode and verify JWT tokens
  * Top-tier implementation with signature verification info
@@ -125,7 +125,7 @@ export function JwtTool() {
             setInput(e.target.value)
             setError(null)
           }}
-          placeholder="粘贴JWT令牌 (eyJhbGciOiJIUzI1NiIs...)")
+          placeholder="粘贴JWT令牌 (eyJhbGciOiJIUzI1NiIs...)"
           minRows={3}
         />
       </div>

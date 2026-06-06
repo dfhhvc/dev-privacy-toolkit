@@ -52,12 +52,12 @@ export function useTheme() {
   }, [])
 
   const toggleTheme = useCallback(() => {
-    setTheme(prev => {
+    setThemeState((prev: Theme) => {
       const next = prev === "light" ? "dark" : prev === "dark" ? "system" : "light"
       localStorage.setItem(STORAGE_KEY, next)
       return next
     })
-  }, [setTheme])
+  }, [])
 
   return { theme, resolvedTheme, setTheme, toggleTheme }
 }

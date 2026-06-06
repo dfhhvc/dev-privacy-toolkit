@@ -1,4 +1,4 @@
-/"/**
+/**
  * Toast Container Component
  * Displays toast notifications
  */
