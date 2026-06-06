@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dfhhvc.github.io/dev-privacy-toolkit/sitemap.xml
