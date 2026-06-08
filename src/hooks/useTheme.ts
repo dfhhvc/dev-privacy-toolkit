@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from "react"
 import type { Theme } from "@/types"
 
-const STORAGE_KEY = "dev-privacy-toolkit-theme"
+const STORAGE_KEY = "devvault-pro-theme"
 
 function getInitialTheme(): Theme {
   if (typeof window === "undefined") return "system"

@@ -8,7 +8,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
   distDir: "dist",
-  basePath: "/dev-privacy-toolkit",
+  basePath: "/devvault-pro",
   images: {
     unoptimized: true,
   },
